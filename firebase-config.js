@@ -1,4 +1,3 @@
-
 export const firebaseConfig = {
   apiKey: "AIzaSyCmZjPrYbV4aPbDRGt9v0Jt1H4DZpS8vgA",
   authDomain: "hpp-telur.firebaseapp.com",
