@@ -1,10 +1,280 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#14532d"><title>HPP Telur • Peternakan</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div><div class="eyebrow">PETERNAKAN • KALKULATOR BIAYA</div><h1>HPP Telur <span class="pill">Versi uji</span></h1></div><div id="connection" class="status">Menghubungkan Firebase…</div></header>
-<div id="setup" class="setup hidden"><h2>Firebase belum diatur</h2><p>Masukkan konfigurasi proyek Firebase di berkas <code>firebase-config.js</code>, aktifkan Firestore dan Anonymous Authentication, lalu unggah ulang ke GitHub Pages. Petunjuk ada di README.md.</p></div>
-<main id="app" class="hidden"><nav id="tabs"><button data-tab="dashboard" class="active">Dashboard</button><button data-tab="input">Input & transaksi</button><button data-tab="stok">Stok & riwayat</button><button data-tab="laporan">Laporan</button><button data-tab="backup">Cadangan</button></nav>
-<section id="dashboard" class="panel"><div class="bar"><h2>Ringkasan peternakan</h2><label>Periode <input id="month" type="month"></label></div><div id="metrics" class="metrics"></div><div class="columns"><div class="card"><h3>Harga jual berdasarkan HPP</h3><div class="formgrid"><label>Target laba/kg (Rp)<input id="target-profit" type="number" min="0" value="3000"></label><label>Biaya penjualan/kg (Rp)<input id="selling-cost" type="number" min="0" value="0"></label><label>Biaya penjualan (%)<input id="selling-rate" type="number" min="0" max="99" step="0.1" value="0"></label><label>Harga pasar/kg (Rp)<input id="market-price" type="number" min="0" value="25000"></label></div><div id="price-result" class="result"></div><small>Simulasi memakai HPP operasional periode terpilih; HPP bulan berjalan dapat berubah ketika biaya aktual dimasukkan.</small></div><div class="card"><h3>Catatan perhitungan</h3><p>HPP = biaya produksi yang dibebankan pada periode ÷ telur layak jual yang dihasilkan dalam periode tersebut.</p><p>Biaya telur terjual mengikuti FIFO dari tanggal produksi. Pembelian pakan atau tray tidak otomatis menjadi biaya produksi.</p><p id="pending-cost" class="warning"></p></div></div></section>
-<section id="input" class="panel hidden"><h2>Catat aktivitas</h2><p class="muted">Setiap transaksi tersimpan ke Firebase. Harga dan tanggal transaksi tersimpan sesuai saat dicatat.</p><div class="card"><label>Jenis transaksi<select id="type"><option value="feed_buy">Belanja pakan</option><option value="feed_use">Pakan digunakan</option><option value="production">Produksi telur</option><option value="expense">Pengeluaran operasional</option><option value="sale">Penjualan telur + tukar tray</option><option value="sale_payment">Pembayaran piutang agen</option><option value="tray_buy">Belanja tray</option><option value="tray_loss">Tray rusak / hilang</option><option value="flock">Perubahan populasi ayam</option><option value="other_income">Pendapatan tambahan</option></select></label><form id="transaction-form"><div id="fields" class="formgrid"></div><div class="actions"><button id="save" class="primary" type="submit">Simpan transaksi</button><span id="form-notice"></span></div></form></div><div class="card"><h3>Panduan singkat</h3><p>Urutan penggunaan: catat belanja pakan → pemakaian pakan → berat produksi telur → pengeluaran → penjualan dan jumlah tray ditukar. Stok awal dapat dimasukkan sebagai belanja bertanggal awal. Jika ada transaksi salah, hapus lalu catat ulang.</p></div></section>
-<section id="stok" class="panel hidden"><h2>Stok & riwayat transaksi</h2><div id="stock-cards" class="metrics"></div><div class="bar"><h3>Daftar transaksi</h3><label>Filter <select id="filter-type"><option value="">Semua</option></select></label></div><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Detail</th><th>Nilai</th><th>Aksi</th></tr></thead><tbody id="transactions"></tbody></table></div></section>
-<section id="laporan" class="panel hidden"><div class="bar"><h2>Laporan bulanan</h2><button id="export-csv">Unduh CSV</button></div><div id="report"></div><p class="muted">Pengeluaran kas dan biaya produksi ditampilkan terpisah. Laba laporan ini adalah estimasi operasional sebelum biaya ayam/aset opsional dan pajak. Biaya periode masa depan yang belum dicatat dapat mengubah laporan historis.</p></section>
-<section id="backup" class="panel hidden"><h2>Cadangan & pengaturan</h2><div class="card"><p>Data aplikasi tersimpan di Cloud Firestore. Simpan file JSON secara berkala sebagai cadangan mandiri.</p><div class="actions"><button id="export-json">Unduh cadangan JSON</button><label class="filelabel">Impor JSON <input id="import-json" type="file" accept="application/json" hidden></label></div><p class="warning">Impor mengganti seluruh data peternakan saat ini. Simpan cadangan dahulu.</p></div><div class="card"><h3>Keamanan versi uji</h3><p>Aplikasi tidak meminta login, tetapi menggunakan Firebase Authentication anonim di belakang layar. Aturan Firestore contoh memperbolehkan seluruh pengunjung anonim mengakses data peternakan yang sama. Jangan gunakan untuk data asli atau sebarkan URL sebelum autentikasi pemilik dan aturan akses per pengguna diterapkan.</p></div></section></main>
-<div id="toast" role="status" aria-live="polite"></div><script type="module" src="app.js"></script></body></html>
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#114126">
+  <title>HPP Telur • Peternakan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-shell">
+      <div class="brand-block">
+        <div class="eyebrow">PETERNAKAN • KALKULATOR BIAYA PRODUKSI</div>
+        <h1>HPP Telur <span class="pill">Versi uji</span></h1>
+        <p class="hero-copy">Pantau pakan, produksi telur, biaya operasional, tray, penjualan, dan HPP harian dalam satu dashboard yang lebih rapi untuk HP maupun laptop.</p>
+      </div>
+      <div class="hero-panel">
+        <div id="connection" class="status">Menghubungkan Firebase…</div>
+        <div class="hero-mini-grid">
+          <div class="hero-mini-card">
+            <span>Mode akses</span>
+            <strong>Tanpa login</strong>
+          </div>
+          <div class="hero-mini-card">
+            <span>Penyimpanan</span>
+            <strong>Firebase</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="setup" class="setup hidden">
+    <h2>Firebase belum diatur</h2>
+    <p>Masukkan konfigurasi proyek Firebase di berkas <code>firebase-config.js</code>, aktifkan Firestore dan Anonymous Authentication, lalu unggah ulang ke GitHub Pages. Petunjuk ada di README.md.</p>
+  </div>
+
+  <main id="app" class="hidden app-shell">
+    <nav id="tabs" class="tabbar">
+      <button data-tab="dashboard" class="active">Dashboard</button>
+      <button data-tab="input">Input & transaksi</button>
+      <button data-tab="stok">Stok & riwayat</button>
+      <button data-tab="laporan">Laporan</button>
+      <button data-tab="backup">Cadangan</button>
+    </nav>
+
+    <section id="dashboard" class="panel">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Ringkasan utama</div>
+          <h2>Dashboard HPP Peternakan</h2>
+          <p class="section-copy">Melihat HPP, produksi, penjualan, dan simulasi harga jual dari periode yang dipilih.</p>
+        </div>
+        <label class="compact-label">Periode <input id="month" type="month"></label>
+      </div>
+
+      <div id="metrics" class="metrics metrics-hero"></div>
+
+      <div class="content-grid two-col-uneven">
+        <div class="card card-accent">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Simulasi</div>
+              <h3>Harga jual berdasarkan HPP</h3>
+            </div>
+          </div>
+          <div class="formgrid formgrid-compact">
+            <label>Target laba/kg (Rp)<input id="target-profit" type="number" min="0" value="3000"></label>
+            <label>Biaya penjualan/kg (Rp)<input id="selling-cost" type="number" min="0" value="0"></label>
+            <label>Biaya penjualan (%)<input id="selling-rate" type="number" min="0" max="99" step="0.1" value="0"></label>
+            <label>Harga pasar/kg (Rp)<input id="market-price" type="number" min="0" value="25000"></label>
+          </div>
+          <div id="price-result" class="result"></div>
+          <small>Simulasi memakai HPP operasional periode terpilih. Jika data produksi atau biaya berubah, hasil simulasi ikut menyesuaikan.</small>
+        </div>
+
+        <div class="stack-gap">
+          <div class="card card-soft">
+            <div class="card-head">
+              <div>
+                <div class="section-kicker">Validasi</div>
+                <h3>Catatan perhitungan</h3>
+              </div>
+            </div>
+            <ul class="feature-list">
+              <li>HPP = biaya produksi yang dibebankan pada periode ÷ telur layak jual pada periode yang sama.</li>
+              <li>Pembelian pakan atau tray tidak otomatis menjadi HPP; yang dihitung adalah pemakaian dan alokasi biayanya.</li>
+              <li>Biaya telur terjual mengikuti FIFO dari tanggal produksi.</li>
+            </ul>
+            <p id="pending-cost" class="warning"></p>
+          </div>
+
+          <div class="card card-soft">
+            <div class="card-head">
+              <div>
+                <div class="section-kicker">Fokus</div>
+                <h3>Yang perlu diperhatikan</h3>
+              </div>
+            </div>
+            <div class="mini-note-grid">
+              <div class="mini-note"><strong>Pakan</strong><span>Catat belanja dan pemakaian terpisah agar HPP akurat.</span></div>
+              <div class="mini-note"><strong>Produksi</strong><span>Masukkan telur layak jual dan telur rusak setiap hari.</span></div>
+              <div class="mini-note"><strong>Penjualan</strong><span>Catat pembayaran awal dan pelunasan piutang agen secara terpisah.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="input" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Transaksi harian</div>
+          <h2>Input & transaksi</h2>
+          <p class="section-copy">Pilih jenis transaksi, isi detailnya, lalu simpan. Harga, tanggal, dan nilai perhitungan akan mengikut data yang dicatat.</p>
+        </div>
+      </div>
+
+      <div class="content-grid two-col-uneven">
+        <div class="card card-accent">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Form utama</div>
+              <h3>Catat aktivitas peternakan</h3>
+            </div>
+          </div>
+          <label>Jenis transaksi
+            <select id="type">
+              <option value="feed_buy">Belanja pakan</option>
+              <option value="feed_use">Pakan digunakan</option>
+              <option value="production">Produksi telur</option>
+              <option value="expense">Pengeluaran operasional</option>
+              <option value="sale">Penjualan telur + tukar tray</option>
+              <option value="sale_payment">Pembayaran piutang agen</option>
+              <option value="tray_buy">Belanja tray</option>
+              <option value="tray_loss">Tray rusak / hilang</option>
+              <option value="flock">Perubahan populasi ayam</option>
+              <option value="other_income">Pendapatan tambahan</option>
+            </select>
+          </label>
+          <div id="transaction-stock" class="transaction-stock" aria-live="polite"></div>
+          <form id="transaction-form">
+            <div id="fields" class="formgrid"></div>
+            <div id="transaction-preview" class="transaction-preview" aria-live="polite"></div>
+            <div class="actions">
+              <button id="save" class="primary" type="submit">Simpan transaksi</button>
+              <span id="form-notice"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="stack-gap">
+          <div class="card card-soft">
+            <div class="card-head">
+              <div>
+                <div class="section-kicker">Panduan singkat</div>
+                <h3>Alur pemakaian harian</h3>
+              </div>
+            </div>
+            <ol class="number-list">
+              <li>Catat <strong>belanja pakan</strong> jika ada stok baru masuk.</li>
+              <li>Catat <strong>pakan digunakan</strong> sesuai pemakaian bersih hari itu.</li>
+              <li>Catat <strong>produksi telur</strong> dalam kilogram.</li>
+              <li>Tambahkan <strong>pengeluaran operasional</strong> yang relevan.</li>
+              <li>Catat <strong>penjualan</strong> beserta tray dan pembayaran.</li>
+            </ol>
+          </div>
+          <div class="card card-soft">
+            <div class="card-head">
+              <div>
+                <div class="section-kicker">Pengingat</div>
+                <h3>Aturan data</h3>
+              </div>
+            </div>
+            <ul class="feature-list">
+              <li>Jika transaksi salah, hapus lalu catat ulang.</li>
+              <li>Biaya berkala seperti listrik dapat diisi sebagai periode.</li>
+              <li>Stok yang ditampilkan mengikuti tanggal transaksi; perubahan stok tetap divalidasi kembali saat disimpan.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stok" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Kontrol persediaan</div>
+          <h2>Stok & riwayat</h2>
+          <p class="section-copy">Pantau pakan, telur, tray, populasi ayam, piutang, dan daftar seluruh transaksi.</p>
+        </div>
+      </div>
+
+      <div id="stock-cards" class="metrics"></div>
+
+      <div class="card">
+        <div class="bar">
+          <div>
+            <div class="section-kicker">Riwayat</div>
+            <h3>Daftar transaksi</h3>
+          </div>
+          <label class="compact-label">Filter
+            <select id="filter-type"><option value="">Semua</option></select>
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Tanggal</th><th>Jenis</th><th>Detail</th><th>Nilai</th><th>Aksi</th></tr>
+            </thead>
+            <tbody id="transactions"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="laporan" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Rekap periode</div>
+          <h2>Laporan bulanan</h2>
+          <p class="section-copy">Ringkasan kinerja peternakan untuk evaluasi HPP, margin, dan arus kas periode berjalan.</p>
+        </div>
+        <button id="export-csv">Unduh CSV</button>
+      </div>
+      <div id="report"></div>
+      <p class="muted">Pengeluaran kas dan biaya produksi ditampilkan terpisah. Laba laporan ini adalah estimasi operasional sebelum biaya ayam/aset opsional dan pajak.</p>
+    </section>
+
+    <section id="backup" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">Cadangan data</div>
+          <h2>Cadangan & pengaturan</h2>
+          <p class="section-copy">Simpan file cadangan secara berkala agar data tetap aman selama masa pengujian.</p>
+        </div>
+      </div>
+
+      <div class="content-grid two-col-equal">
+        <div class="card card-accent">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Backup</div>
+              <h3>Ekspor & impor data</h3>
+            </div>
+          </div>
+          <p>Data aplikasi tersimpan di Cloud Firestore. Simpan juga file JSON sebagai cadangan mandiri.</p>
+          <div class="actions">
+            <button id="export-json">Unduh cadangan JSON</button>
+            <label class="filelabel">Impor JSON <input id="import-json" type="file" accept="application/json" hidden></label>
+          </div>
+          <p class="warning">Impor mengganti seluruh data peternakan saat ini. Simpan cadangan dahulu.</p>
+        </div>
+
+        <div class="card card-soft">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Keamanan</div>
+              <h3>Catatan versi uji</h3>
+            </div>
+          </div>
+          <p>Aplikasi tidak meminta login, tetapi menggunakan Firebase Authentication anonim di belakang layar. Aturan Firestore contoh masih cocok untuk pengujian, belum untuk data usaha yang sensitif.</p>
+          <ul class="feature-list">
+            <li>Jangan sebarkan URL secara luas sebelum pengamanan akses selesai.</li>
+            <li>Gunakan data simulasi atau data yang sudah aman untuk fase uji.</li>
+            <li>Jika nanti diperlukan, login pemilik dan karyawan dapat ditambahkan.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

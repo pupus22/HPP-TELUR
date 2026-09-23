@@ -1,11 +1,10 @@
-
+// Salin firebaseConfig dari Firebase Console > Project settings > Your apps > Web app.
+// Nilai di bawah adalah placeholder, bukan konfigurasi Firebase nyata.
 export const firebaseConfig = {
-  apiKey: "AIzaSyCmZjPrYbV4aPbDRGt9v0Jt1H4DZpS8vgA",
-  authDomain: "hpp-telur.firebaseapp.com",
-  projectId: "hpp-telur",
-  storageBucket: "hpp-telur.firebasestorage.app",
-  messagingSenderId: "852753592931",
-  appId: "1:852753592931:web:92ab29c817c65fb31c3e56"
+  apiKey: "ISI_API_KEY",
+  authDomain: "ISI_PROJECT_ID.firebaseapp.com",
+  projectId: "ISI_PROJECT_ID",
+  appId: "ISI_APP_ID"
 };
-
+// Nama dokumen data satu peternakan; aksesnya masih terbuka untuk pengguna anonim pada versi demo.
 export const FARM_ID = "demo-peternakan";

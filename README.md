@@ -41,3 +41,8 @@ Perhitungan berpusat pada **HPP operasional**. HPP penuh (biaya ayam dan penyusu
 - `firebase-config.js`: isi pengaturan dari proyek Firebase Anda.
 - `firestore.rules`: aturan **khusus demo yang tidak aman untuk data asli**.
 - `test.mjs`: uji hitungan dasar menggunakan Node.js.
+
+## Revisi tampilan v3 — stok dan HPP saat input
+Pada **Input & transaksi**, ringkasan stok pakan, telur, dan tray sekarang terlihat sebelum transaksi disimpan. Saat memilih **Pakan digunakan**, form menampilkan stok pakan terpilih, perkiraan biaya FIFO, dan sisa stok. Saat memilih **Penjualan telur + tukar tray**, form menampilkan stok telur dan tray pada tanggal transaksi, biaya persediaan telur yang akan terjual (FIFO), HPP rata-rata bulan sebagai pembanding, nilai penjualan, selisih sebelum biaya penjualan lainnya, dan perkiraan piutang. Semua pratinjau berubah sewaktu jumlah/harga/tanggal diubah. Nilai pratinjau bukan validasi final: transaksi tetap divalidasi ulang terhadap data Firestore pada saat menyimpan.
+
+PENTING: Paket ZIP distribusi masih berisi `firebase-config.js` contoh (placeholder), bukan konfigurasi Firebase pengguna. **Sebelum mengganti berkas GitHub, simpan salinan konfigurasi Firebase dari repository Anda dan masukkan nilainya lagi ke `firebase-config.js` versi baru.** Jangan mengganti database atau aturan Firestore untuk pembaruan tampilan ini.
